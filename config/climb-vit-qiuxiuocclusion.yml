@@ -1,0 +1,60 @@
+MODEL:
+  NAME: 'ViT-B-16'
+  STRIDE_SIZE: [16, 16]
+  MEMORY_MOMENTUM: 0.2
+  ID_LOSS_WEIGHT: 0.25
+  PCL_LOSS_WEIGHT: 1.0
+  SIE_CAMERA: True
+  SIE_COE : 1.0
+  
+  # 遮挡感知配置
+  USE_OCCLUSION_AWARE: True
+  OCCLUSION_CONSISTENCY_WEIGHT: 0.1
+
+INPUT:
+  SIZE_TRAIN: [256, 128]
+  SIZE_TEST: [256, 128]
+  PROB: 0.5  # 水平翻转概率
+  RE_PROB: 0.6  # 随机遮挡概率 (提高以增强鲁棒性)
+  PADDING: 10
+  PIXEL_MEAN: [0.5, 0.5, 0.5]
+  PIXEL_STD: [0.5, 0.5, 0.5]
+
+  # 遮挡增强配置
+  OCCLUSION_MODE: 'enhanced'  # 'enhanced' 或 'original'
+  OCCLUSION_MAX_COUNT: 3  # 最大遮挡块数
+  OCCLUSION_SHAPES: ['rect', 'circle', 'ellipse', 'mixed']  # 遮挡形状
+
+DATALOADER:
+  NUM_INSTANCE: 8
+  NUM_WORKERS: 0  # 根据服务器调整
+  CLUSTER_BATCH_SIZE: 2048  # cluster loader 的 batch size
+
+SOLVER:
+  IMS_PER_BATCH: 64
+  OPTIMIZER_NAME: "SGD"
+  BASE_LR: 3.0e-4  # 稍微降低学习率以适应新增模块
+  WARMUP_METHOD: 'linear'
+  WARMUP_ITERS: 10
+  WARMUP_FACTOR: 0.1
+  WEIGHT_DECAY: 5.0e-4
+  MAX_EPOCHS: 60  # 增加训练轮数以充分学习遮挡鲁棒性
+  CHECKPOINT_PERIOD: 60
+  LOG_PERIOD: 50
+  EVAL_PERIOD: 60
+  ITERS: 400
+
+  STEPS: [40, 60]  # 调整学习率衰减步骤
+  GAMMA: 0.1
+
+TEST:
+  EVAL: True
+  IMS_PER_BATCH: 128
+  RE_RANKING: True
+  PRETRAINED_PATH: './logs/qiuxiu_occlusion/best_model.pth.tar'  # 从原始模型初始化
+
+DATASETS:
+  NAMES: ('qiuxiu')  # 替换为你的篮球数据集名称
+  ROOT_DIR: ('/home/xiaolei/projects/data/ReID/Qiuxiu')  # 替换为你的数据集路径
+
+OUTPUT_DIR: './logs/qiuxiu_occlusion_post_processing'
